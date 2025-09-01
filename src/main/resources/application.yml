@@ -1,1 +1,4 @@
-spring.application.name=EataMamaBE
+spring:
+  config:
+    import: optional:classpath:application-${spring.profiles.active}.yml
+spring.profiles.active: dev

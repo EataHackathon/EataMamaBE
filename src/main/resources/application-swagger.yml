@@ -1,0 +1,13 @@
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    url: /v3/api-docs
+    operationsSorter: method
+    tagsSorter: alpha
+    with-credentials: true
+  model-and-view-allowed: true
+  override-with-generic-response: false
+  show-actuator: true
