@@ -47,7 +47,7 @@ jobs:
         run: docker build -t eatamama .
 
       - name: Docker 이미지에 Tag 붙이기
-        run: docker tag busan ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
+        run: docker tag eatamama ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
 
       - name: ECR에 Docker 이미지 Push하기
         run: docker push ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
