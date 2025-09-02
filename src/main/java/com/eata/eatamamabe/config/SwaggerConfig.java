@@ -70,59 +70,76 @@ public class SwaggerConfig {
     @Bean
     public OpenApiCustomizer globalErrorResponses() {
         return openApi -> {
-            // --- 스키마 존재 보장 ---
-            if (openApi.getComponents() == null) {
-                openApi.setComponents(new Components());
-            }
-            var components = openApi.getComponents();
-            if (components.getSchemas() == null) {
-                components.setSchemas(new LinkedHashMap<>());
-            }
-
-            // --- 공통 에러 응답 부착 (상태코드별 예시) ---
+            if (openApi.getComponents() == null) openApi.setComponents(new Components());
+            if (openApi.getComponents().getSchemas() == null) openApi.getComponents().setSchemas(new LinkedHashMap<>());
             if (openApi.getPaths() == null) return;
 
-            openApi.getPaths().values().forEach(pathItem ->
-                    pathItem.readOperations().forEach(op -> {
-                        op.getResponses().addApiResponse("400",
-                                errorResponse("잘못된 요청(Validation/Binding)", "REQ.VALIDATION", "입력값을 확인해주세요."));
+            // 공통 에러 스키마: Response<Void> 형태
+            openApi.getComponents().addSchemas("Response_Error",
+                    new Schema<Map<String, Object>>()
+                            .addProperty("data", new Schema<>().nullable(true))
+                            .addProperty("status", new StringSchema().example("FAIL")) // 4xx=FAIL, 5xx=ERROR
+                            .addProperty("serverDateTime", new StringSchema().example("2025-09-03T12:34:56.789"))
+                            .addProperty("errorCode", new StringSchema().example("REQ.VALIDATION"))
+                            .addProperty("errorMessage", new StringSchema().example("입력값을 확인해주세요."))
+            );
+
+            openApi.getPaths().values().forEach(path ->
+                    path.readOperations().forEach(op -> {
+                        // 400: 하나의 응답에 여러 example 제공 (핸들러의 400군)
+                        op.getResponses().addApiResponse("400", error400());
+
+                        // 핸들러에 존재하는 상태만 등록
                         op.getResponses().addApiResponse("401",
                                 errorResponse("인증 필요", "AUTH.UNAUTHORIZED", "로그인이 필요합니다."));
                         op.getResponses().addApiResponse("403",
                                 errorResponse("권한 없음", "AUTH.FORBIDDEN", "접근 권한이 없습니다."));
                         op.getResponses().addApiResponse("404",
-                                errorResponse("리소스 없음", "DATA.NOT_FOUND", "요청한 리소스를 찾을 수 없습니다."));
+                                errorResponse("리소스 없음", "COMMON.NOT_FOUND", "요청한 리소스를 찾을 수 없습니다."));
+                        op.getResponses().addApiResponse("405",
+                                errorResponse("허용되지 않은 메서드", "REQ.METHOD_NOT_ALLOWED", "지원하지 않는 HTTP 메서드입니다."));
                         op.getResponses().addApiResponse("409",
-                                errorResponse("중복/제약 위반", "DATA.DUPLICATE", "이미 존재하는 데이터입니다."));
-                        op.getResponses().addApiResponse("413",
-                                errorResponse("업로드 용량 초과", "UPLOAD.TOO_LARGE", "파일 용량 제한을 초과했습니다."));
+                                errorResponse("중복/제약 위반", "DATA.CONSTRAINT", "데이터 제약 조건을 위반했습니다."));
+                        op.getResponses().addApiResponse("415",
+                                errorResponse("지원하지 않는 Content-Type", "REQ.UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 Content-Type 입니다."));
                         op.getResponses().addApiResponse("500",
-                                errorResponse("백엔드 서버 내부 오류", "SYS.INTERNAL", "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
+                                errorResponse("서버 내부 오류", "INTERNAL_ERROR", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
                     })
             );
         };
     }
 
+    // 400 Bad Request: Handler 내 4가지 케이스를 예시로 제공
+    private ApiResponse error400() {
+        MediaType mt = new MediaType().schema(new Schema<>().$ref("#/components/schemas/Response_Error"));
+
+        mt.addExamples("validation", example("FAIL", "REQ.VALIDATION", "email: 올바른 형식이 아닙니다."));
+        mt.addExamples("typeMismatch", example("FAIL", "REQ.TYPE_MISMATCH", "파라미터 'week' 타입이 올바르지 않습니다."));
+        mt.addExamples("missingParam", example("FAIL", "REQ.MISSING_PARAM", "필수 파라미터 누락: logDate"));
+        mt.addExamples("invalidJson", example("FAIL", "REQ.INVALID_JSON", "요청 본문이 올바른 JSON 형식이 아닙니다."));
+
+        Content content = new Content().addMediaType("application/json", mt);
+        return new ApiResponse().description("잘못된 요청").content(content);
+    }
+
     // --- util: 상태코드/설명/에러코드/메시지를 받아 예시 포함 ApiResponse 생성 ---
     private ApiResponse errorResponse(String description, String code, String message) {
-        boolean is500 = "SYS.INTERNAL".equals(code); // 또는 description/코드로 판별
-        Map<String, Object> exampleMap = new LinkedHashMap<>();
-        exampleMap.put("status", is500 ? "ERROR" : "FAIL");  // 4xx=FAIL, 5xx=ERROR
-        exampleMap.put("serverDateTime", "2025-08-09T12:34:56.789");
-        exampleMap.put("errorCode", code);
-        exampleMap.put("errorMessage", message);
-        exampleMap.put("data", null);
-
-        Example example = new Example()
-                .summary("예시")
-                .value(exampleMap);
-
-        MediaType mediaType = new MediaType()
+        String status = "INTERNAL_ERROR".equals(code) ? "ERROR" : "FAIL";
+        MediaType mt = new MediaType()
                 .schema(new Schema<>().$ref("#/components/schemas/Response_Error"))
-                .addExamples("default", example);
+                .addExamples("default", example(status, code, message));
 
-        Content content = new Content().addMediaType("application/json", mediaType);
-
+        Content content = new Content().addMediaType("application/json", mt);
         return new ApiResponse().description(description).content(content);
+    }
+
+    private Example example(String status, String code, String message) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("data", null);
+        body.put("status", status); // 4xx=FAIL, 5xx=ERROR
+        body.put("serverDateTime", "2025-09-03T12:34:56.789");
+        body.put("errorCode", code);
+        body.put("errorMessage", message);
+        return new Example().summary(code).value(body);
     }
 }
