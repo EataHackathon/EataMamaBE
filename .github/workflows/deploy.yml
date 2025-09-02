@@ -44,13 +44,13 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Docker 이미지 생성
-        run: docker build -t busan .
+        run: docker build -t eatamama .
 
       - name: Docker 이미지에 Tag 붙이기
-        run: docker tag busan ${{ steps.login-ecr.outputs.registry }}/busan:latest
+        run: docker tag busan ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
 
       - name: ECR에 Docker 이미지 Push하기
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/busan:latest
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
 
       - name: SSH로 bastion host 접속 및 실제 서버에 배포하기
         uses: appleboy/ssh-action@v1.0.3
@@ -67,11 +67,11 @@ jobs:
               aws ecr get-login-password --region ap-northeast-2 \
                 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
-              docker stop busan || true
-              docker rm busan || true
-              docker pull ${{ steps.login-ecr.outputs.registry }}/busan:latest
-              docker run -d --name busan --restart=unless-stopped \
+              docker stop eatamama || true
+              docker rm eatamama || true
+              docker pull ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
+              docker run -d --name eatamama --restart=unless-stopped \
                 -e SPRING_PROFILES_ACTIVE=dev \
                 -p 8080:8080 \
-                ${{ steps.login-ecr.outputs.registry }}/busan:latest
+                ${{ steps.login-ecr.outputs.registry }}/eatamama:latest
             EOF
