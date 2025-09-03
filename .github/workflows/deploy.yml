@@ -18,9 +18,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
-#      - name: application-dev-oauth.yml 파일 생성하기
-#        run: |
-#          echo "${{ secrets.APPLICATION_DEV_OAUTH_YML }}" | base64 --decode > ./src/main/resources/application-dev-oauth.yml
+      - name: application-dev-oauth.yml 파일 생성하기
+        run: |
+          echo "${{ secrets.APPLICATION_DEV_OAUTH_YML }}" | base64 --decode > ./src/main/resources/application-dev-oauth.yml
 
       - name: application-dev.yml 파일 생성하기
         run: |
