@@ -16,6 +16,7 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
     private final Long id;
     private final String provider;     // "kakao"
     private final String providerId;   // 카카오 고유 ID
+    private final String profileImageUrl;
     private final String email;
     private final String nickname;
     private final Map<String, Object> attributes;
@@ -24,6 +25,7 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
         this.id = user.getId();
         this.provider = user.getProvider();
         this.providerId = user.getProviderId();
+        this.profileImageUrl = user.getProfileImageUrl();
         this.email = user.getEmail();
         this.nickname = user.getNickname();
         this.attributes = attributes;

@@ -5,37 +5,28 @@ import lombok.Getter;
 
 import java.util.Map;
 
-/**
- * OAuth2 로그인 시 내려오는 사용자 정보를 표준화해서 담는 DTO
- * - provider: 어떤 소셜인지 (예: "kakao")
- * - providerId: 소셜에서 제공하는 고유 ID
- * - email: 이메일 (없을 수 있음)
- * - nickname: 닉네임
- * - attributes: 원본 응답 전체 Map (필요할 때 직접 접근 가능)
- */
 @Getter
 public class OAuthAttributes {
 
     private final String provider;
     private final String providerId;
+    private final String profileImageUrl;
     private final String email;
     private final String nickname;
     private final Map<String, Object> attributes;
 
     @Builder
     public OAuthAttributes(String provider, String providerId, String email,
-                           String nickname, Map<String, Object> attributes) {
+                           String nickname, String profileImageUrl,
+                           Map<String, Object> attributes) {
         this.provider = provider;
         this.providerId = providerId;
+        this.profileImageUrl = profileImageUrl;
         this.email = email;
         this.nickname = nickname;
         this.attributes = attributes;
     }
 
-    /**
-     * OAuthAttributes 생성 진입점
-     * - 추후 Kakao 말고 Google, Naver 확장도 가능
-     */
     public static OAuthAttributes of(String provider, Map<String, Object> attributes) {
         return switch (provider) {
             case "kakao" -> ofKakao(attributes);
@@ -43,37 +34,55 @@ public class OAuthAttributes {
         };
     }
 
-    /**
-     * Kakao 응답 파싱
-     * 카카오 응답 구조:
-     * {
-     *   id=12345,
-     *   kakao_account={email=..., profile={nickname=...}},
-     *   properties={nickname=...}
-     * }
-     */
+    // ---------- Kakao ----------
     private static OAuthAttributes ofKakao(Map<String, Object> attributes) {
-        String providerId = String.valueOf(attributes.get("id"));
+        final String providerId = String.valueOf(attributes.get("id"));
 
-        Map<String, Object> account = (Map<String, Object>) attributes.get("kakao_account");
-        Map<String, Object> properties = (Map<String, Object>) attributes.get("properties");
+        final Map<String, Object> account    = getMap(attributes, "kakao_account");
+        final Map<String, Object> properties = getMap(attributes, "properties");
+        final Map<String, Object> profile    = getMap(account,    "profile");
 
-        String email = account != null ? (String) account.get("email") : null;
-        String nickname = null;
-
-        if (properties != null && properties.get("nickname") != null) {
-            nickname = (String) properties.get("nickname");
-        } else if (account != null && account.get("profile") != null) {
-            Map<String, Object> profile = (Map<String, Object>) account.get("profile");
-            nickname = (String) profile.get("nickname");
-        }
+        final String email = getString(account, "email");
+        final String nickname = firstNonBlank(
+                getString(properties, "nickname"),
+                getString(profile,    "nickname"),
+                "사용자"
+        );
+        final String profileImageUrl = firstNonBlank(
+                // 신규(v2) 우선
+                getString(profile,    "profile_image_url"),
+                getString(profile,    "thumbnail_image_url"),
+                // 레거시 보조
+                getString(properties, "profile_image"),
+                getString(properties, "thumbnail_image")
+        );
 
         return OAuthAttributes.builder()
                 .provider("kakao")
                 .providerId(providerId)
                 .email(email)
-                .nickname(nickname != null ? nickname : "사용자")
+                .nickname(nickname)
+                .profileImageUrl(profileImageUrl)
                 .attributes(attributes)
                 .build();
+    }
+
+    // ---------- tiny helpers ----------
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> getMap(Map<String, Object> parent, String key) {
+        if (parent == null) return null;
+        Object v = parent.get(key);
+        return (v instanceof Map<?, ?> mm) ? (Map<String, Object>) mm : null;
+    }
+
+    private static String getString(Map<String, Object> map, String key) {
+        if (map == null) return null;
+        Object v = map.get(key);
+        return (v instanceof String s && !s.isBlank()) ? s : null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String v : values) if (v != null && !v.isBlank()) return v;
+        return null;
     }
 }

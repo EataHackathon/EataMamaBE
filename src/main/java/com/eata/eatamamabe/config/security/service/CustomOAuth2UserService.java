@@ -38,6 +38,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         .providerId(oAuthAttributes.getProviderId())
                         .email(oAuthAttributes.getEmail())
                         .nickname(oAuthAttributes.getNickname())
+                        .profileImageUrl(oAuthAttributes.getProfileImageUrl())
                         .build()));
 
         // SecurityContext에 CustomUserDetails 세팅
