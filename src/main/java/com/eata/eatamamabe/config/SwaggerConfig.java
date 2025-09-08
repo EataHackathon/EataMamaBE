@@ -24,15 +24,15 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
 
         String socialLoginGuide = """
-                        ## 📌 소셜 로그인 테스트 방법(아직 미구현)
+                        ## 📌 소셜 로그인 테스트 방법
                         Swagger에서 직접 실행(`Try it out`)은 OAuth2 리다이렉트 흐름 특성상 동작하지 않습니다.
                         대신 **브라우저 주소창**에서 아래 URL로 이동하세요:
                         
                         - 로컬 Kakao 로그인: [http://localhost:8080/oauth2/authorization/kakao](http://localhost:8080/oauth2/authorization/kakao)
                         - 배포 Kakao 로그인: [http://43.203.72.175/oauth2/authorization/kakao](http://43.203.72.175/oauth2/authorization/kakao)
                         
-                         ## 📌 예외 코드 처리(아직 미구현)
-                        각 api를 열어보면 Responses Code마다 예시가 하나씩 들어있습니다
+                         ## 📌 예외 코드 처리
+                        각 api를 열어보면 Responses Code마다 예시가 하나씩 들어있습니다(커스텀 예외를 놓쳤을시 뜨는 공통 예외처리들)
                         
                         ## 📌 스웨거 테스트시 유의점
                         바로 밑에 보이는 Servers에서 로컬환경이면 로컬주소를 선택해서, 배포환경이면 배포주소를 선택하고 테스트해주세요.
