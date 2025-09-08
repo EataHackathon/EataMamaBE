@@ -61,9 +61,9 @@ public class User extends BaseTimeEntity {
     }
 
     // ====== 편의 메서드 ======
-    public void updateHealth(Integer height, Integer weight, Integer week) {
-        this.height = height;
-        this.weight = weight;
-        this.week   = week;
+    public void updateHealth(Integer h, Integer w, Integer wk) {
+        if (h != null) this.height = h;
+        if (w != null) this.weight = w;
+        if (wk != null) this.week = wk;
     }
 }

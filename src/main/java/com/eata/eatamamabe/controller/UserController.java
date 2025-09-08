@@ -2,18 +2,13 @@ package com.eata.eatamamabe.controller;
 
 import com.eata.eatamamabe.config.security.CustomUserDetails;
 import com.eata.eatamamabe.dto.common.Response;
-import com.eata.eatamamabe.dto.user.MyInfoCreateRequestDTO;
-import com.eata.eatamamabe.dto.user.MyInfoCreateResponseDTO;
-import com.eata.eatamamabe.dto.user.MyInfoResponseDTO;
+import com.eata.eatamamabe.dto.user.*;
 import com.eata.eatamamabe.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +20,7 @@ public class UserController {
             description = "로그인된 사용자의 정보를 조회합니다.(알레르기와 컨디션 정보를 모두 가져옵니다)"
     )
     @GetMapping("/api/user/info")
-    public ResponseEntity<Response<MyInfoResponseDTO>> getMyInfo(
+    public ResponseEntity<Response<MyInfoGetResponseDTO>> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails principal) {
         return ResponseEntity.ok(Response.success(userService.getMyInfo(principal.getId())));
     }
@@ -42,5 +37,25 @@ public class UserController {
             @RequestBody MyInfoCreateRequestDTO request
     ) {
         return ResponseEntity.ok(Response.success(userService.createMyInfo(principal.getId(), request)));
+    }
+
+    @Operation(
+            summary = "내정보 수정",
+            description = """
+            - 숫자 필드(height, weight, week)는 값이 있을 때만 갱신합니다.
+            - conditions/allergies는 요청 배열을 기준으로 동기화합니다.
+            - id가 있으면 해당 항목의 이름을 수정
+            - id가 없으면 신규 추가
+            - 요청에서 빠진 기존 항목은 삭제(orphanRemoval)
+            - conditionId나 allergieId이 없는데 수정하려 하면 오류가 나도록 구현"""
+    )
+
+    @PatchMapping("/api/user/info")
+    public ResponseEntity<Response<MyInfoUpdateResponseDTO>> patchMyInfo(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestBody MyInfoUpdateRequestDTO request
+    ) {
+        MyInfoUpdateResponseDTO res = userService.patchMyInfo(principal.getId(), request);
+        return ResponseEntity.ok(Response.success(res));
     }
 }
