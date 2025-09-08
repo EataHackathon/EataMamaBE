@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface AllergyRepository extends JpaRepository<Allergy, Long> {
     List<Allergy> findAllByUserId(Long userId);
+    void deleteAllByUserId(Long userId);
 }

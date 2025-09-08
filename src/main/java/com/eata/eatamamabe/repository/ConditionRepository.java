@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ConditionRepository extends JpaRepository<Condition, Long> {
     List<Condition> findAllByUserId(Long userId);
+    void deleteAllByUserId(Long userId);
 }

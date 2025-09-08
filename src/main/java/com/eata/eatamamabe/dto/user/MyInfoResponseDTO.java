@@ -17,9 +17,9 @@ public class MyInfoResponseDTO {
     private String email;
     private String nickname;
     private String profileImageUrl;
-    private Long height;
-    private Long weight;
-    private Long week;
+    private Integer height;
+    private Integer weight;
+    private Integer week;
     private List<ConditionDto> conditions;
     private List<AllergyDto> allergies;
     private LocalDateTime createdAt;

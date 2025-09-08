@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 "/api-docs/**",
                                 "/v3/api-docs/**",
                                 "/h2-console/**").permitAll()
-                        .requestMatchers("/api/**","/oauth2/**","/login/oauth2/**").permitAll()
+                        .requestMatchers("/oauth2/**","/login/oauth2/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
