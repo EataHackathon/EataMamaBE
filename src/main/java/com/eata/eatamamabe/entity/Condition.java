@@ -14,6 +14,7 @@ public class Condition extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long conditionId; // 내부 PK
 
+    @Setter
     @Column(length = 50)
     private String diseaseName; // 질환 이름 (nullable)
 

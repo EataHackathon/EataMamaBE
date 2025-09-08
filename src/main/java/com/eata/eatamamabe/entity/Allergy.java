@@ -14,6 +14,7 @@ public class Allergy extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long allergyId;   // 내부 PK
 
+    @Setter
     @Column(length = 50)
     private String allergyName; // 알레르기 이름 (nullable)
 

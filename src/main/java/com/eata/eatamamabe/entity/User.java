@@ -34,13 +34,13 @@ public class User extends BaseTimeEntity {
     private String profileImageUrl;
 
     @Column
-    private Long height;
+    private Integer height;
 
     @Column
-    private Long weight;
+    private Integer weight;
 
     @Column
-    private Long week;
+    private Integer week;
 
     // ====== 연관관계 ======
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -58,5 +58,12 @@ public class User extends BaseTimeEntity {
     public void addAllergy(Allergy allergy) {
         allergies.add(allergy);
         allergy.setUser(this);
+    }
+
+    // ====== 편의 메서드 ======
+    public void updateHealth(Integer h, Integer w, Integer wk) {
+        if (h != null) this.height = h;
+        if (w != null) this.weight = w;
+        if (wk != null) this.week = wk;
     }
 }
