@@ -37,7 +37,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         String accessToken = jwtService.generateAccessToken(userDetails.getId());
 
-        String target = "local".equalsIgnoreCase(appEnv) ? redirectDev + accessToken : redirectLocal + accessToken;
+        String target = "dev".equalsIgnoreCase(appEnv) ? redirectDev + accessToken : redirectLocal + accessToken;
         response.sendRedirect(target);
     }
 }
