@@ -1,19 +1,18 @@
 package com.eata.eatamamabe.repository;
 
-import com.eata.eatamamabe.dto.ingredient.IngredientSearchResponseDTO;
+import com.eata.eatamamabe.dto.search.SearchItemResponseDTO;
 import com.eata.eatamamabe.entity.Ingredient;
+import com.eata.eatamamabe.entity.enums.SearchType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
-
 public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     @Query("""
-        SELECT new com.eata.eatamamabe.dto.ingredient.IngredientSearchResponseDTO(
-            i.ingredientId, i.ingredientName, i.ingredientKcal, i.gram
+        SELECT new com.eata.eatamamabe.dto.search.SearchItemResponseDTO(
+            i.ingredientId, i.ingredientName, i.ingredientKcal, i.gram, :type
         )
         FROM Ingredient i
         WHERE (:name IS NULL OR LOWER(i.ingredientName) LIKE CONCAT('%', LOWER(:name), '%'))
@@ -25,9 +24,10 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
           CASE WHEN :name IS NOT NULL THEN ABS(LENGTH(i.ingredientName) - LENGTH(:name)) ELSE LENGTH(i.ingredientName) END,
           i.ingredientId DESC
     """)
-    Slice<IngredientSearchResponseDTO> searchIngredientsByRelevance(
+    Slice<SearchItemResponseDTO> searchIngredientsByRelevance(
             @Param("name") String name,
             @Param("lastId") Long lastId,
+            @Param("type") SearchType type,
             Pageable pageable
     );
 }

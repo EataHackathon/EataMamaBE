@@ -1,6 +1,7 @@
 package com.eata.eatamamabe.controller;
 
 import com.eata.eatamamabe.dto.common.Response;
+import com.eata.eatamamabe.dto.search.SearchItemResponseDTO;
 import com.eata.eatamamabe.entity.enums.SearchType;
 import com.eata.eatamamabe.service.SearchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,10 +22,10 @@ public class SearchController {
 
     @Operation(
             summary = "음식/재료 검색 (커서 방식, 무한스크롤)",
-            description = "음식이나 재료를 검색합니다"
+            description = "type=FOOD|INGREDIENT, name(optional), lastId(optional), size(default 10)"
     )
     @GetMapping
-    public ResponseEntity<Response<Slice<?>>> search(
+    public ResponseEntity<Response<Slice<SearchItemResponseDTO>>> search(
             @RequestParam SearchType type,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long lastId,
