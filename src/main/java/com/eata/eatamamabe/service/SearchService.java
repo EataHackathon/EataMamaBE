@@ -1,5 +1,6 @@
 package com.eata.eatamamabe.service;
 
+import com.eata.eatamamabe.dto.search.SearchItemDetailResponseDTO;
 import com.eata.eatamamabe.dto.search.SearchItemResponseDTO;
 import com.eata.eatamamabe.entity.enums.SearchType;
 import com.eata.eatamamabe.repository.FoodRepository;
@@ -24,5 +25,10 @@ public class SearchService {
         return (type == SearchType.FOOD)
                 ? foodRepository.searchFoodsByRelevance(q, lastId, SearchType.FOOD, p)
                 : ingredientRepository.searchIngredientsByRelevance(q, lastId, SearchType.INGREDIENT, p);
+    }
+
+    public Slice<SearchItemDetailResponseDTO> searchMeal(String name, Long lastId, int size) {
+        String q = (name == null || name.isBlank()) ? null : name;
+        return foodRepository.searchMealFoods(q, lastId, PageRequest.of(0, size));
     }
 }
