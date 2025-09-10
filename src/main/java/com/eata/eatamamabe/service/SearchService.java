@@ -23,8 +23,8 @@ public class SearchService {
         String q = (name == null || name.isBlank()) ? null : name;
 
         return (type == SearchType.FOOD)
-                ? foodRepository.searchFoodsByRelevance(q, lastId, SearchType.FOOD, p)
-                : ingredientRepository.searchIngredientsByRelevance(q, lastId, SearchType.INGREDIENT, p);
+                ? foodRepository.searchFoodsByRelevance(q, lastId, p)
+                : ingredientRepository.searchIngredientsByRelevance(q, lastId, p);
     }
 
     public Slice<SearchItemDetailResponseDTO> searchMeal(String name, Long lastId, int size) {
