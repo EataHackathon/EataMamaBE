@@ -15,5 +15,4 @@ public class SearchItemResponseDTO {
     private String name;
     private Long kcal;
     private Long gram;
-    private SearchType type; // FOOD or INGREDIENT
 }

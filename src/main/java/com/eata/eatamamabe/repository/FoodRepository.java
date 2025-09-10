@@ -3,7 +3,6 @@ package com.eata.eatamamabe.repository;
 import com.eata.eatamamabe.dto.search.SearchItemDetailResponseDTO;
 import com.eata.eatamamabe.dto.search.SearchItemResponseDTO;
 import com.eata.eatamamabe.entity.Food;
-import com.eata.eatamamabe.entity.enums.SearchType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 public interface FoodRepository extends JpaRepository<Food, Long> {
     @Query("""
         SELECT new com.eata.eatamamabe.dto.search.SearchItemResponseDTO(
-            f.foodId, f.foodName, f.foodKcal, f.gram, :type
+            f.foodId, f.foodName, f.foodKcal, f.gram
         )
         FROM Food f
         WHERE (:name IS NULL OR LOWER(f.foodName) LIKE CONCAT('%', LOWER(:name), '%'))
@@ -28,7 +27,6 @@ public interface FoodRepository extends JpaRepository<Food, Long> {
     Slice<SearchItemResponseDTO> searchFoodsByRelevance(
             @Param("name") String name,
             @Param("lastId") Long lastId,
-            @Param("type") SearchType type,
             Pageable pageable
     );
 
