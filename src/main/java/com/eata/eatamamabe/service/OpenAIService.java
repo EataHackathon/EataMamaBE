@@ -20,6 +20,7 @@ public class OpenAIService {
     @Value("${openai.model}")
     private String model;
 
+    // 식사별 AI 요약/조언 생성
     public String generateMealAdvice(MealRequest request) {
         try {
             String systemMsg = "너는 임산부 영양 코치 AI다. 임신 주차와 식단을 고려해 "
@@ -71,6 +72,74 @@ public class OpenAIService {
             return String.valueOf(summary);
         } catch (Exception e) {
             throw new RuntimeException("MealAdvice 생성 실패: " + e.getMessage(), e);
+        }
+    }
+
+    // 날짜별 요약/조언 생성
+    public String generateDailyAdvice(
+            String logDate,
+            Long totalKcal, Long totalCarbo, Long totalProtein, Long totalFat, Long totalFiber
+    ) {
+        try {
+            String systemMsg =
+                    "너는 임산부 영양 코치 AI다. 하루 섭취 총합을 분석해서 "
+                            + "1) summary: 하루 총평 및 조언 (90자 이내 한국어 3~4문장)"
+                            + "2) flag: 부족하거나 과다한 영양소 하나를 '영양소명 상태' 형식으로 반환 (예: '칼로리 부족', '당 과다', '지방 과다')."
+                            + "만약 특별한 이상이 없으면 '적절함'으로 표시.\n"
+                            + "3) rating: flag 값이 '부족' 또는 '과다'를 포함하면 'CAUTION', 그렇지 않고 '적절함'이면 'GOOD'"
+                            + "반드시 JSON 스키마에 맞춰서 대답해.";
+
+            String payloadJson = om.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(Map.of(
+                            "logDate", logDate,
+                            "totals", Map.of(
+                                    "kcal", totalKcal,
+                                    "carbo", totalCarbo,
+                                    "protein", totalProtein,
+                                    "fat", totalFat,
+                                    "fiber", totalFiber
+                            )
+                    ));
+
+            String userMsg = "다음 하루 섭취 총합을 분석해서 summary, flag, rating을 생성해줘:\n" + payloadJson;
+
+            Map<String, Object> schema = Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "summary", Map.of("type", "string"),
+                            "flag", Map.of("type", "string"),
+                            "rating", Map.of("type", "string", "enum", List.of("GOOD","CAUTION"))
+                    ),
+                    "required", List.of("summary","flag","rating"),
+                    "additionalProperties", false
+            );
+
+            Map<String, Object> body = Map.of(
+                    "model", model,
+                    "input", List.of(
+                            Map.of("role", "system", "content", systemMsg),
+                            Map.of("role", "user", "content", userMsg)
+                    ),
+                    "text", Map.of(
+                            "format", Map.of(
+                                    "name", "daily_advice",
+                                    "type", "json_schema",
+                                    "schema", schema
+                            )
+                    ),
+                    "temperature", 0.2
+            );
+
+            Map resp = restTemplate.postForObject("/responses", body, Map.class);
+            List<Map<String, Object>> output = (List<Map<String, Object>>) resp.get("output");
+            List<Map<String, Object>> content = (List<Map<String, Object>>) output.get(0).get("content");
+            String rawJsonText = String.valueOf(content.get(0).get("text")); // 필요한 거
+
+            Map<String, Object> parsed = om.readValue(rawJsonText, Map.class);
+
+            return om.writeValueAsString(parsed);
+        } catch (Exception e) {
+            throw new RuntimeException("DailyAdvice 생성 실패: " + e.getMessage(), e);
         }
     }
 }
