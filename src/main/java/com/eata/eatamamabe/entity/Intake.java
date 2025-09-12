@@ -37,6 +37,6 @@ public class Intake extends BaseTimeEntity{
     private Long dietaryFiber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "meal_id")
+    @JoinColumn(name = "mealId")
     private Meal meal;
 }
