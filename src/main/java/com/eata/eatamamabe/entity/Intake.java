@@ -39,4 +39,14 @@ public class Intake extends BaseTimeEntity{
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "mealId")
     private Meal meal;
+
+    public void updateNutrition(String name, Long kcal, Long gram, Long carbo, Long protein, Long fat, Long dietaryFiber) {
+        if (name != null) this.intakeName = name;
+        if (kcal != null) this.intakeKcal = kcal;
+        if (gram != null) this.gram = gram;
+        if (carbo != null) this.carbo = carbo;
+        if (protein != null) this.protein = protein;
+        if (fat != null) this.fat = fat;
+        if (dietaryFiber != null) this.dietaryFiber = dietaryFiber;
+    }
 }

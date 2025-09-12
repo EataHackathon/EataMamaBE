@@ -2,9 +2,7 @@ package com.eata.eatamamabe.controller;
 
 import com.eata.eatamamabe.config.security.CustomUserDetails;
 import com.eata.eatamamabe.dto.common.Response;
-import com.eata.eatamamabe.dto.meal.DayLogDetailResponseDTO;
-import com.eata.eatamamabe.dto.meal.MealCreateRequestDTO;
-import com.eata.eatamamabe.dto.meal.MealCreateResponseDTO;
+import com.eata.eatamamabe.dto.meal.*;
 import com.eata.eatamamabe.service.MealService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,9 +39,21 @@ public class MealController {
     public ResponseEntity<Response<DayLogDetailResponseDTO>> getMealsByDate(
             @Parameter(description = "하루 기준 날짜(yyyy-MM-dd)", example = "2025-09-03", required = true)
             @RequestParam String logDate,
-            @AuthenticationPrincipal(expression = "id") Long userId
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        DayLogDetailResponseDTO data = mealService.getMealsByDate(userId, logDate);
+        DayLogDetailResponseDTO data = mealService.getMealsByDate(principal.getId(), logDate);
         return ResponseEntity.ok(Response.success(data));
+    }
+
+    @Operation(summary = "식단 수정하기",
+            description = "mealId 기준으로 식단 및 하위 섭취 항목을 동기화 방식으로 수정합니다.")
+    @PutMapping("/{mealId}")
+    public ResponseEntity<Response<MealUpdateResponseDTO>> updateMeal(
+            @Parameter(description = "수정할 Meal의 ID", example = "1") @PathVariable Long mealId,
+            @RequestBody MealUpdateRequestDTO request,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        MealUpdateResponseDTO res = mealService.updateMeal(principal.getId(), mealId, request);
+        return ResponseEntity.ok(Response.success(res));
     }
 }
