@@ -20,11 +20,12 @@ public class MealAdviceController {
     private final OpenAIService openAIService;
 
     // POST /api/ai/meals/{mealId}/advice
-    // summary 반환
     @PostMapping("/{mealId}/advice")
     public ResponseEntity<SummaryResponse> createAdvice(@PathVariable Long mealId) {
         MealRequest request = mealService.getMealRequest(mealId);
         String summary = openAIService.generateMealAdvice(request);
+
+        mealService.saveMealAdvice(mealId, summary);
 
         return ResponseEntity.ok(new SummaryResponse(summary));
     }
