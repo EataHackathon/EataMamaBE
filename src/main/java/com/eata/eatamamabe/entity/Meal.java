@@ -29,12 +29,12 @@ public class Meal extends BaseTimeEntity{
     @Column(nullable = false)
     private LocalDateTime mealTime;
 
-    @Column(length = 255)
+    @Column(nullable = true, length = 255)
     private String mealAdvice;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "day_log_id")
-//    private DayLog dayLog;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dayLogId")
+    private DayLog dayLog;
 
     @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
