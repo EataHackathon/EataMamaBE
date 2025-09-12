@@ -1,5 +1,6 @@
 package com.eata.eatamamabe.service;
 
+import com.eata.eatamamabe.config.exception.CustomException;
 import com.eata.eatamamabe.dto.meal.*;
 import com.eata.eatamamabe.entity.DayLog;
 import com.eata.eatamamabe.entity.Intake;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class MealService {
     @Transactional
     public MealCreateResponseDTO createMeal(Long userId, MealCreateRequestDTO req) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> CustomException.notFound("유저를 찾을수 없습니다" + userId));
 
         DayLog dayLog = dayLogRepository.findByUserAndLogDate(user, req.getLogDate())
                 .orElseGet(() -> {
@@ -87,4 +89,39 @@ public class MealService {
     }
 
     private Long z(Long v) { return (v == null) ? 0L : v; }
+
+    @Transactional(readOnly = true)
+    public DayLogDetailResponseDTO getMealsByDate(Long userId, String logDate) {
+        // 유저 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> CustomException.notFound("유저를 찾을수 없습니다" + userId));
+
+        // DayLog 조회(없으면 예외 or 빈 데이터 정책 선택)
+        DayLog dayLog = dayLogRepository.findByUserAndLogDate(user, logDate)
+                .orElseThrow(() -> CustomException.notFound("현재 날짜에 대한 데이로그가 없습니다" + logDate));
+
+        // Meal + Intake fetch join으로 일괄 로드
+        var meals = mealRepository.findAllByDayLogIdWithIntakes(dayLog.getDayLogId());
+
+        var mealDtos = meals.stream().map(m -> {
+            var intakeDtos = m.getIntakes().stream()
+                    .map(i -> new IntakeSimpleDTO(i.getIntakeId(), i.getIntakeName(), i.getIntakeKcal()))
+                    .collect(Collectors.toList());
+
+            return new MealSummaryDTO(
+                    m.getMealId(),
+                    m.getMealType(),
+                    m.getMealName(),
+                    m.getMealAdvice(),
+                    intakeDtos
+            );
+        }).collect(Collectors.toList());
+
+        return new DayLogDetailResponseDTO(
+                dayLog.getDayLogId(),
+                dayLog.getLogDate(),
+                dayLog.getDailyAdvice(),
+                mealDtos
+        );
+    }
 }
