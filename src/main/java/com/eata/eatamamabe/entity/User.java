@@ -49,6 +49,9 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Allergy> allergies = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DayLog> dayLogs = new ArrayList<>();
+
     // ====== 연관관계 편의 메서드 ======
     public void addCondition(Condition condition) {
         conditions.add(condition);
