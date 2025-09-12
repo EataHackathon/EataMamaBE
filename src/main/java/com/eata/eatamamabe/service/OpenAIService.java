@@ -240,4 +240,87 @@ public class OpenAIService {
             throw new RuntimeException("Ingredient advice 생성 실패: " + e.getMessage(), e);
         }
     }
+
+    // 음식 상세 검색
+    public String generateFoodDetailAdvice(
+            String foodName,
+            Long gram,
+            Number kcal, Number carbo, Number protein, Number fat, Number fiber,
+            List<String> ingredientNames
+    ) {
+        try {
+            String systemMsg =
+                    "너는 임산부 영양 코치 AI다. 아래 '음식 1개' 정보를 보고 JSON만 반환한다.\n" +
+                            "요구사항:\n" +
+                            "1) risk: 음식 전체 관점에서 'GOOD' | 'OK' | 'CAUTION' 중 하나로 평가.\n" +
+                            "2) ingredientsAnalysis: 반드시 제공된 ingredients 배열에서만 이름을 선택하여 4~6개 작성한다.\n" +
+                            "   - 각 항목 {name, rating, reason}\n" +
+                            "   - rating: GOOD | OK | CAUTION\n" +
+                            "   - reason: 임산부 관점에서 요약한다.(25자 이하의 문장, 한국어). 영양소(탄수화물/단백질/지방/나트륨 등) 이름을 name으로 쓰지 말 것.\n" +
+                            "3) finalSummary: 한두 문장으로 핵심 요약/주의점(한국어).\n" +
+                            "4) 반드시 지정된 JSON 스키마만 출력. 추가 텍스트 금지.";
+
+            Map<String, Object> payload = Map.of(
+                    "food", Map.of(
+                            "name", foodName,
+                            "gram", gram,
+                            "kcal", kcal,
+                            "carbo", carbo,
+                            "protein", protein,
+                            "fat", fat,
+                            "fiber", fiber
+                    ),
+                    "ingredients", ingredientNames
+            );
+
+            String userMsg = "아래 음식 영양정보와 재료 목록을 참고해 risk/ingredientsAnalysis/finalSummary를 생성:\n"
+                    + om.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+
+            Map<String, Object> schema = Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "risk", Map.of("type", "string", "enum", List.of("GOOD", "OK", "CAUTION")),
+                            "ingredientsAnalysis", Map.of(
+                                    "type", "array",
+                                    "items", Map.of(
+                                            "type", "object",
+                                            "properties", Map.of(
+                                                    "name", Map.of("type", "string"),
+                                                    "rating", Map.of("type", "string", "enum", List.of("GOOD", "OK", "CAUTION")),
+                                                    "reason", Map.of("type", "string")
+                                            ),
+                                            "required", List.of("name", "rating", "reason"),
+                                            "additionalProperties", false
+                                    ),
+                                    "minItems", 4,
+                                    "maxItems", 6
+                            ),
+                            "finalSummary", Map.of("type", "string")
+                    ),
+                    "required", List.of("risk", "ingredientsAnalysis", "finalSummary"),
+                    "additionalProperties", false
+            );
+
+            Map<String, Object> body = Map.of(
+                    "model", model,
+                    "input", List.of(
+                            Map.of("role", "system", "content", systemMsg),
+                            Map.of("role", "user", "content", userMsg)
+                    ),
+                    "text", Map.of("format", Map.of(
+                            "name", "food_detail",
+                            "type", "json_schema",
+                            "schema", schema
+                    )),
+                    "temperature", 0.2
+            );
+
+            Map resp = restTemplate.postForObject("/responses", body, Map.class);
+            List<Map<String, Object>> output = (List<Map<String, Object>>) resp.get("output");
+            List<Map<String, Object>> content = (List<Map<String, Object>>) output.get(0).get("content");
+            return String.valueOf(content.get(0).get("text"));
+        } catch (Exception e) {
+            throw new RuntimeException("Food detail 생성 실패: " + e.getMessage(), e);
+        }
+    }
 }
