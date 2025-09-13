@@ -83,7 +83,12 @@ public class SecurityConfig {
                 "http://eata-fe.s3-website.ap-northeast-2.amazonaws.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"
+        ));
+        config.setExposedHeaders(List.of(
+                "Authorization", "Content-Type"
+        ));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
