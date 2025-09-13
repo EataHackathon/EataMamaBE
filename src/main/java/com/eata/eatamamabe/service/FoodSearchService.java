@@ -1,5 +1,6 @@
 package com.eata.eatamamabe.service;
 
+import com.eata.eatamamabe.config.exception.CustomException;
 import com.eata.eatamamabe.dto.search.FoodDetailRequest;
 import com.eata.eatamamabe.dto.search.FoodDetailResponse;
 import com.eata.eatamamabe.entity.Food;
@@ -7,7 +8,9 @@ import com.eata.eatamamabe.entity.Ingredient;
 import com.eata.eatamamabe.repository.FoodRepository;
 import com.eata.eatamamabe.repository.IngredientRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.SQLExceptionOverride;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,13 +23,19 @@ public class FoodSearchService {
     private final FoodRepository foodRepository;
     private final IngredientRepository ingredientRepository;
     private final OpenAIService openAIService;
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om;
 
     public FoodDetailResponse detail(FoodDetailRequest req) {
+        // 요청 오류
+        if (req == null || req.getData() == null || req.getData().getFoodName() == null
+                || req.getData().getFoodName().isBlank()) {
+            throw CustomException.badRequest("foodName은 필수 값입니다.");
+        }
+
         String name = req.getData().getFoodName();
 
         Food food = foodRepository.findFirstByFoodNameIgnoreCase(name)
-                .orElseThrow(() -> new IllegalArgumentException("food not found: " + name));
+                .orElseThrow(() -> CustomException.notFound("food not found: " + name));
 
         List<String> ingredientNames = ingredientRepository.findByFood_FoodId(food.getFoodId())
                 .stream()
@@ -34,16 +43,22 @@ public class FoodSearchService {
                 .toList();
 
         // OpenAI 호출 (음식 단건 + 성분 분석)
-        String raw = openAIService.generateFoodDetailAdvice(
-                food.getFoodName(),
-                food.getGram(),
-                food.getFoodKcal(),
-                food.getCarbo(),
-                food.getProtein(),
-                food.getFat(),
-                food.getDietaryFiber(),
-                ingredientNames
-        );
+        String raw;
+        try {
+            raw = openAIService.generateFoodDetailAdvice(
+                    food.getFoodName(),
+                    food.getGram(),
+                    food.getFoodKcal(),
+                    food.getCarbo(),
+                    food.getProtein(),
+                    food.getFat(),
+                    food.getDietaryFiber(),
+                    ingredientNames
+            );
+        } catch (Exception e) {
+            throw new CustomException("AI.EXTERNAL_API", "AI 서비스 호출 실패: " + e.getMessage(),
+                    HttpStatus.BAD_GATEWAY);
+        }
 
         Map<String, Object> parsed;
         try {
