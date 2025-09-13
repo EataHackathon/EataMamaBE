@@ -49,6 +49,13 @@ public class MealService {
     }
 
     @Transactional
+    public void saveMealAdvice(Long mealId, String advice) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new IllegalArgumentException("meal not found: " + mealId));
+        meal.setMealAdvice(advice);
+    }
+
+    @Transactional
     public MealCreateResponseDTO createMeal(Long userId, MealCreateRequestDTO req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> CustomException.notFound("유저를 찾을수 없습니다 : " + userId));
