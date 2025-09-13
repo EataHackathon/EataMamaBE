@@ -40,7 +40,7 @@ public class SecurityConfig {
         http
                 .csrf((auth) -> auth.disable())
                 .formLogin((auth) -> auth.disable())
-                .cors(Customizer.withDefaults())
+                .cors(c -> c.configurationSource(corsConfigurationSource()))
                 .httpBasic((auth) -> auth.disable())
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
